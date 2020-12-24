@@ -14,6 +14,7 @@ $totalm=$(free -m | awk '/^Mem:/{print $2}') ;
 echo "Storj node installer"
 echo "1° - Raspberry PI update...."
 sudo apt-get update -y && sudo apt-get upgrade -y
+sudo apt-get install dnsutils -y
 sudo rpi-update
 
 if ($totalm > 4000);then
@@ -57,4 +58,12 @@ sudo docker pull storjlabs/watchtower
 sudo docker run -d --restart=always --name watchtower -v /var/run/docker.sock:/var/run/docker.sock storjlabs/watchtower storagenode watchtower --stop-timeout 300s --interval 21600
 
 echo "5° - Install storj-exporrter"
-docker run -d --link=storagenode --name=storj-exporter -p 9651:9651 anclrii/storj-exporter:latest
+if ($ARCH == "64");then
+  sudo docker pull anclrii/storj-exporter:latest
+  docker run -d --link=storagenode --name=storj-exporter -p 9651:9651 anclrii/storj-exporter:latest
+else
+  sudo apt-get install python3 python3-pip -y
+  python3 pip install prometheus_client
+  wget https://raw.githubusercontent.com/anclrii/Storj-Exporter/master/storj-exporter.py
+  sudo echo "sudo python3 /home/pi/storj-exporter.py &" >> /etc/profile
+fi
